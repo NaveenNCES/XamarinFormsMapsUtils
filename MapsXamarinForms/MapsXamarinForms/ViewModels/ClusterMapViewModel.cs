@@ -14,7 +14,7 @@ namespace MapsXamarinForms.ViewModels
     {
         private readonly INavigationService _navigationService;
         private readonly IMapService _mapService;
-        private List<Cluster> _cluster;
+        private List<Cluster> _clusterResponseData;
 
         public ClusterMapViewModel(INavigationService navigationService, IMapService mapService) : base(navigationService)
         {
@@ -22,10 +22,10 @@ namespace MapsXamarinForms.ViewModels
             _mapService = mapService;
         }
 
-        public List<Cluster> ClusterDatas
+        public List<Cluster> ClusterResponseData
         {
-            get { return _cluster; }
-            set { SetProperty(ref _cluster, value); }
+            get { return _clusterResponseData; }
+            set { SetProperty(ref _clusterResponseData, value); }
         }
 
         public override void OnNavigatedTo(INavigationParameters parameters)
@@ -36,7 +36,7 @@ namespace MapsXamarinForms.ViewModels
 
         private async void GetClusterData()
         {
-            ClusterDatas = await _mapService.GetClustersAsync();
+            ClusterResponseData = await _mapService.GetClustersAsync();
         }
     }
 }
