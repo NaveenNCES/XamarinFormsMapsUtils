@@ -2,13 +2,14 @@
 using Android.Gms.Maps;
 using Android.Gms.Maps.Model;
 using Android.Widget;
-using AndroidX.Fragment.App;
 using Com.Google.Maps.Android.Clustering;
 using MapsXamarinForms.CustomRenderer;
 using MapsXamarinForms.Droid.CustomRenderer;
-using Sample.Droid.Utils;
+using MapsXamarinForms.Models;
+using Sample.Droid.Models;
 using System;
-using System.IO;
+using System.Collections.Generic;
+using System.ComponentModel;
 using Xamarin.Forms;
 using Xamarin.Forms.Maps;
 using Xamarin.Forms.Maps.Android;
@@ -25,14 +26,44 @@ namespace MapsXamarinForms.Droid.CustomRenderer
         protected GoogleMap googleMap { get; private set; }
         protected MapFragment mapFragment { get; private set; }
 
+        private List<ClusterMarker> ClusterList { get; set; } = new List<ClusterMarker>();
+
         public CustomClusterMapRendererAndroid(Context context) : base(context)
         {
         }
 
+        protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            base.OnElementPropertyChanged(sender, e);
+            if (e.PropertyName == "ClusterData")
+            {
+                var clusterData = (CustomClusterMapRenderer)sender;
+                foreach (Cluster cluster in clusterData.ClusterData)
+                {
+                    ClusterList.Add(new ClusterMarker
+                    {
+                        Position = new LatLng(cluster.Lat, cluster.Lng),
+                        Snippet = cluster.Snippet,
+                        Title = cluster.Title
+                    });
+                }
+
+                try
+                {
+                    StartMap();
+                    clusterManager.AddItems(ClusterList);
+                }
+                catch (Exception)
+                {
+                    Toast.MakeText(this.Context, "Problem reading list of markers.", ToastLength.Long).Show();
+                }
+            }
+        }
 
         protected override void OnElementChanged(ElementChangedEventArgs<Map> e)
         {
             base.OnElementChanged(e);
+
             try
             {
                 MainActivity.Instance.SetContentView(LayoutId());
@@ -42,7 +73,6 @@ namespace MapsXamarinForms.Droid.CustomRenderer
             {
                 System.Diagnostics.Debug.WriteLine(@"			ERROR: ", ex.Message);
             }
-
         }
 
         private void StartMap()
@@ -50,22 +80,6 @@ namespace MapsXamarinForms.Droid.CustomRenderer
             googleMap.MoveCamera(CameraUpdateFactory.NewLatLngZoom(new LatLng(51.503186, -0.126446), 10));
             clusterManager = new ClusterManager(this.Context, googleMap);
             googleMap.SetOnCameraIdleListener(clusterManager);
-
-            try
-            {
-                ReadJson();
-            }
-            catch (Exception)
-            {
-                Toast.MakeText(this.Context, "Problem reading list of markers.", ToastLength.Long).Show();
-            }
-        }
-
-        private void ReadJson()
-        {
-            Stream stream = Resources.OpenRawResource(Resource.Raw.radar_search);
-            var items = ItemReader.StreamToClusterMarker(stream);
-            clusterManager.AddItems(items);
         }
 
         protected override void OnMapReady(GoogleMap googleMap)
@@ -76,7 +90,6 @@ namespace MapsXamarinForms.Droid.CustomRenderer
                 return;
 
             this.googleMap = googleMap;
-            StartMap();
         }
 
         private void InitElements()

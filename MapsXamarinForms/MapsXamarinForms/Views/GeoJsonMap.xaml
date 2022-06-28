@@ -5,5 +5,5 @@
              xmlns:customrenderer="clr-namespace:MapsXamarinForms.CustomRenderer"
              prism:ViewModelLocator.AutowireViewModel="True"
              x:Class="MapsXamarinForms.Views.GeoJsonMap">
-    <customrenderer:CustomGeoJsonRenderer x:Name="customMap" MapType="Street" IsShowingUser="True" />
+    <customrenderer:CustomGeoJsonRenderer x:Name="customMap" MapType="Street" IsShowingUser="True" GeoJsonData="{Binding GeoJsonResponseData}" />
 </ContentPage>

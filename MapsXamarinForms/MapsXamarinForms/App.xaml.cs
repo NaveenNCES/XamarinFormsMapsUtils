@@ -1,3 +1,9 @@
+using AutoMapper;
+using Flurl.Http;
+using Flurl.Http.Configuration;
+using MapsXamarinForms.Services;
+using MapsXamarinForms.Services.Interface;
+using MapsXamarinForms.Utils;
 using MapsXamarinForms.ViewModels;
 using MapsXamarinForms.Views;
 using Prism;
@@ -20,16 +26,22 @@ namespace MapsXamarinForms
             InitializeComponent();
 
             await NavigationService.NavigateAsync("NavigationPage/MainPage");
+
+            FlurlHttp.Configure(settings => { settings.HttpClientFactory = new CustomHttpClientFactory(); });
         }
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
             containerRegistry.RegisterSingleton<IAppInfo, AppInfoImplementation>();
+            containerRegistry.RegisterSingleton<IFlurlClientFactory, PerBaseUrlFlurlClientFactory>();
+            containerRegistry.RegisterSingleton<IMapService, MapService>();
 
             containerRegistry.RegisterForNavigation<NavigationPage>();
             containerRegistry.RegisterForNavigation<MainPage, MainPageViewModel>();
             containerRegistry.RegisterForNavigation<GeoJsonMap, GeoJsonMapViewModel>();
             containerRegistry.RegisterForNavigation<ClusterMap, ClusterMapViewModel>();
+
+            containerRegistry.RegisterInstance(new MapperConfiguration(cfg => cfg.AddMaps(typeof(App).Assembly)).CreateMapper());
         }
     }
 }

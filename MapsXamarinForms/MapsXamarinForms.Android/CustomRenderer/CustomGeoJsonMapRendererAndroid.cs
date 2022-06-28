@@ -1,23 +1,16 @@
-﻿using Android.App;
-using Android.Content;
+﻿using Android.Content;
 using Android.Gms.Maps;
 using Android.Gms.Maps.Model;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
 using Android.Widget;
-using Com.Google.Maps.Android.Clustering;
-using Com.Google.Maps.Android.Data;
 using Com.Google.Maps.Android.Data.Geojson;
 using MapsXamarinForms.CustomRenderer;
 using MapsXamarinForms.Droid.CustomRenderer;
+using MapsXamarinForms.Models;
 using Org.Json;
 using System;
-using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
 using Xamarin.Forms;
 using Xamarin.Forms.Maps;
 using Xamarin.Forms.Maps.Android;
@@ -36,6 +29,20 @@ namespace MapsXamarinForms.Droid.CustomRenderer
         {
         }
 
+        protected override void OnElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            base.OnElementPropertyChanged(sender, e);
+
+            if(e.PropertyName == "GeoJsonData")
+            {
+                var geoJsonData = (CustomGeoJsonRenderer)sender;
+                string serializedData = JsonSerializer.Serialize<GeoJson>(geoJsonData.GeoJsonData);
+                var jsonObjectGeoJson = new JSONObject(serializedData);
+                GeoJsonLayer layer = new GeoJsonLayer(googleMap, jsonObjectGeoJson);
+                AddGeoJsonLayerToMap(layer);
+            }
+        }
+
         protected override void OnElementChanged(ElementChangedEventArgs<Map> e)
         {
             base.OnElementChanged(e);
@@ -43,7 +50,6 @@ namespace MapsXamarinForms.Droid.CustomRenderer
             {
                 MainActivity.Instance.SetContentView(LayoutId());
                 InitElements();
-                RetrieveFileFromUrl();
             }
             catch (Exception ex)
             {
@@ -60,44 +66,6 @@ namespace MapsXamarinForms.Droid.CustomRenderer
         private int LayoutId()
         {
             return Resource.Layout.GeoJsonLayout;
-        }
-
-        private void RetrieveFileFromUrl()
-        {
-            DownloadGeoJsonFile(Context.GetString(Resource.String.geojson_url));
-        }
-
-
-        private void RetrieveFileFromResource()
-        {
-            try
-            {
-                GeoJsonLayer layer = new GeoJsonLayer(googleMap, Resource.Raw.earthquakes_with_usa, Context);
-                AddGeoJsonLayerToMap(layer);
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("GeoJSON file could not be read");
-            }
-        }
-
-        private async void DownloadGeoJsonFile(string url)
-        {
-            await Task.Factory.StartNew(() =>
-            {
-                using (var Client = new HttpClient())
-                {
-                    var response = Client.GetAsync(url).Result;
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var layer = new GeoJsonLayer(googleMap, new JSONObject(response.Content.ReadAsStringAsync().Result));
-                        MainActivity.Instance.RunOnUiThread(() =>
-                        {
-                            AddGeoJsonLayerToMap(layer);
-                        });
-                    }
-                }
-            }).ConfigureAwait(false);
         }
 
         protected override void OnMapReady(GoogleMap googleMap)
@@ -119,11 +87,10 @@ namespace MapsXamarinForms.Droid.CustomRenderer
             layer.SetOnFeatureClickListener(this);
         }
 
-
         private void AddColorsToMarkers(GeoJsonLayer layer)
         {
             // Iterate over all the features stored in the layer
-            foreach (GeoJsonFeature feature in layer.Features.ToEnumerable())
+            foreach (Com.Google.Maps.Android.Data.Geojson.GeoJsonFeature feature in layer.Features.ToEnumerable())
             {
                 // Check if the magnitude property exists
                 if (feature.GetProperty("mag") != null && feature.HasProperty("place"))
@@ -167,7 +134,7 @@ namespace MapsXamarinForms.Droid.CustomRenderer
             }
         }
 
-        public void OnFeatureClick(Feature p0)
+        public void OnFeatureClick(Com.Google.Maps.Android.Data.Feature p0)
         {
             Toast.MakeText(Context, "Feature clicked: " + p0.GetProperty("title"), ToastLength.Short).Show();
         }
